@@ -18,7 +18,7 @@
 
 #include "point_type.h"
 
-enum class LidarType { LIVOX, VELODYNE, OUSTER };
+enum class LidarType { LIVOX, VELODYNE, OUSTER, HESAI };
 
 // for Velodyne LiDAR
 struct VelodynePointXYZIRT {
@@ -65,6 +65,19 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
 //         double, timestamp, timestamp)(uint16_t, reflectivity, reflectivity)(
 //         uint8_t, ring, ring)(uint16_t, noise, noise)(uint32_t, range, range))
 
+struct HesaiPointXYZIRT {
+    PCL_ADD_POINT4D;
+    float intensity;
+    double timestamp;
+    uint16_t ring;
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+}EIGEN_ALIGN16;
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    HesaiPointXYZIRT,
+    (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
+        double, timestamp, timestamp)(
+        uint16_t, ring, ring))
+
 class PointCloudPreprocess {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -106,7 +119,8 @@ class PointCloudPreprocess {
 
   void ProcessOuster(const sensor_msgs::PointCloud2::ConstPtr& msg,
                      pcl::PointCloud<PointType>::Ptr& cloud_out);
-
+  void ProcessHesai(const sensor_msgs::PointCloud2::ConstPtr& msg,
+                     pcl::PointCloud<PointType>::Ptr& cloud_out);
   int num_scans_ = 128;
   bool has_time_ = false;
 

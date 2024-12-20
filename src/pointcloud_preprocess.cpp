@@ -41,6 +41,9 @@ void PointCloudPreprocess::Process(
   case LidarType::OUSTER:
     ProcessOuster(msg, cloud_out);
     break;
+  case LidarType::HESAI:
+    ProcessHesai(msg, cloud_out);
+    break;
   default:
     LOG(INFO) << "Error LiDAR Type!!!" << std::endl;
     exit(0);
@@ -157,6 +160,32 @@ void PointCloudPreprocess::ProcessOuster(
     }
   }
 }
+
+void PointCloudPreprocess::ProcessHesai(
+    const sensor_msgs::PointCloud2::ConstPtr& msg,
+    pcl::PointCloud<PointType>::Ptr& cloud_out) {
+  pcl::PointCloud<HesaiPointXYZIRT> cloud_origin;
+  pcl::fromROSMsg(*msg, cloud_origin);
+
+  cloud_out->reserve(cloud_origin.size());
+  const auto timestamp_offset = cloud_origin.header.stamp / 1e3;
+  for (size_t i = 0; i < cloud_origin.size(); ++i) {
+    if ((i % config_.point_filter_num == 0) && !HasInf(cloud_origin.at(i)) &&
+        !HasNan(cloud_origin.at(i))) {
+      PointType point;
+      point.normal_x = 0;
+      point.normal_y = 0;
+      point.normal_z = 0;
+      point.x = cloud_origin.at(i).x;
+      point.y = cloud_origin.at(i).y;
+      point.z = cloud_origin.at(i).z;
+      point.curvature = cloud_origin.at(i).timestamp * config_.time_scale - timestamp_offset ;
+      cloud_out->push_back(point);
+    }
+  }
+}
+
+
 
 template <typename T>
 inline bool PointCloudPreprocess::HasInf(const T& p) {
